@@ -142,3 +142,25 @@ func TestAdminAPITableStats(t *testing.T) {
 	client.Timeout = 1 * time.Nanosecond
 	_ = util.GetJSON(client, url, &tsResponse)
 }
+
+func TestAdminAPICreateDatabase(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+
+	const nodeCount = 3
+	tc := testcluster.StartTestCluster(t, nodeCount, base.TestClusterArgs{
+		ReplicationMode: base.ReplicationAuto,
+		ServerArgs: base.TestServerArgs{
+			ScanInterval:    time.Millisecond,
+			ScanMaxIdleTime: time.Millisecond,
+		},
+	})
+	defer tc.Stopper().Stop()
+	if err := tc.WaitForFullReplication(); err != nil {
+		t.Fatal(err)
+	}
+
+	db := tc.ServerConn(0)
+	if _, err := db.Exec(`CREATE DATABASE "test test"`); err != nil {
+		t.Fatal(err)
+	}
+}
